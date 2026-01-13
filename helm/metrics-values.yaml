@@ -1,0 +1,12 @@
+global:
+  security:
+    allowInsecureImages: true
+image:
+  registry: registry.k8s.io
+  repository: metrics-server/metrics-server
+  tag: v0.8.0
+apiService:
+  create: true
+extraArgs:
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP

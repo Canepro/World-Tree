@@ -1,0 +1,25 @@
+# SECURITY NOTE: This values file contains credentials that match promtail-credentials Secret.
+# The password here is required because Promtail's config section directly overrides the config file,
+# and Promtail's native config format doesn't support Kubernetes secret references.
+#
+# IMPORTANT: Keep this password in sync with promtail-credentials-secret.yaml
+# For production deployments, consider using the Promtail Helm chart's existingSecret option
+# at the Helm values level (if supported by your chart version) to avoid duplicating credentials.
+#
+# Create the secret first: kubectl apply -f manifests/secrets/promtail-credentials-secret.yaml
+config:
+  clients:
+    - url: https://observability.canepro.me/loki/api/v1/push
+      basic_auth:
+        username: observability-user
+        password: 50JjX+diU6YmAZPl  # Must match promtail-credentials Secret password
+
+  snippets:
+    pipelineStages:
+      - docker: {}
+    extraRelabelConfigs:
+      - replacement: world-tree
+        target_label: cluster
+      - source_labels: [__meta_kubernetes_namespace]
+        regex: '(default|monitoring)'
+        action: keep
