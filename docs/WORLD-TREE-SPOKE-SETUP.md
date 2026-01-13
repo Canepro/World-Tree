@@ -141,6 +141,8 @@ kubectl get pods -n monitoring -l app=prometheus-agent-world-tree-spoke
 kubectl logs -n monitoring -l app=prometheus-agent-world-tree-spoke --tail=50
 ```
 
+**Note:** The Prometheus Agent uses an init container to inject credentials from the `observability-credentials` secret into the configuration at runtime. This allows secure credential management without hardcoding values in the ConfigMap.
+
 ## Step 6: Verify Remote Write
 
 ### Check Agent Logs
@@ -181,9 +183,17 @@ kubectl port-forward -n monitoring svc/prometheus-server 9090:80
 # Check pod status
 kubectl describe pod -n monitoring -l app=prometheus-agent-world-tree-spoke
 
-# Check logs
+# Check logs (main container)
 kubectl logs -n monitoring -l app=prometheus-agent-world-tree-spoke
+
+# Check init container logs if pod is stuck in Init
+kubectl logs -n monitoring -l app=prometheus-agent-world-tree-spoke -c config-injector
 ```
+
+**Common Issues:**
+- **Init container errors**: Verify `observability-credentials` secret exists and has `username` and `password` keys
+- **Config errors**: Check that the init container successfully injected credentials (should see no `USERNAME_PLACEHOLDER` or `PASSWORD_PLACEHOLDER` in logs)
+- **Agent mode errors**: Ensure no `--storage.tsdb.path` flag is present (incompatible with agent mode)
 
 ### Authentication Errors
 

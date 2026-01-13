@@ -39,8 +39,12 @@ This repository contains the complete configuration for a local Kind cluster tha
    # Create monitoring namespace
    kubectl create namespace monitoring
    
-   # Deploy Prometheus Agent (create secret first)
-   kubectl apply -f manifests/secrets/promtail-credentials-secret.yaml
+   # Create observability credentials secret (required for Prometheus Agent)
+   kubectl create secret generic observability-credentials -n monitoring \
+     --from-literal=username="observability-user" \
+     --from-literal=password="YOUR_PASSWORD_HERE"
+   
+   # Deploy Prometheus Agent
    kubectl apply -f manifests/monitoring/prometheus-agent-world-tree-spoke.yaml
    ```
 
