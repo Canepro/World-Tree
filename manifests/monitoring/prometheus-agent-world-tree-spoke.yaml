@@ -44,8 +44,8 @@ data:
     remote_write:
       - url: https://observability.canepro.me/api/v1/write
         basic_auth:
-          username_file: /etc/secrets/username
-          password_file: /etc/secrets/password
+          username: USERNAME_PLACEHOLDER
+          password: PASSWORD_PLACEHOLDER
         queue_config:
           capacity: 2500
           max_shards: 200
@@ -177,12 +177,32 @@ spec:
         cluster: world-tree
     spec:
       serviceAccountName: prometheus-agent-world-tree-spoke
+      initContainers:
+      - name: config-injector
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          USERNAME=$(cat /etc/secrets/username)
+          PASSWORD=$(cat /etc/secrets/password)
+          cp /etc/prometheus-source/prometheus.yml /etc/prometheus/prometheus.yml
+          sed -i "s/USERNAME_PLACEHOLDER/$USERNAME/g" /etc/prometheus/prometheus.yml
+          sed -i "s/PASSWORD_PLACEHOLDER/$PASSWORD/g" /etc/prometheus/prometheus.yml
+        volumeMounts:
+        - name: config-source
+          mountPath: /etc/prometheus-source
+          readOnly: true
+        - name: config
+          mountPath: /etc/prometheus
+        - name: secrets
+          mountPath: /etc/secrets
+          readOnly: true
       containers:
       - name: prometheus
         image: prom/prometheus:v2.45.0
         args:
           - '--config.file=/etc/prometheus/prometheus.yml'
-          - '--storage.tsdb.path=/prometheus'
           - '--enable-feature=agent'
           - '--web.enable-lifecycle'
         ports:
@@ -191,8 +211,6 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/prometheus
-        - name: storage
-          mountPath: /prometheus
         - name: secrets
           mountPath: /etc/secrets
           readOnly: true
@@ -216,10 +234,10 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
-      - name: config
+      - name: config-source
         configMap:
           name: prometheus-agent-world-tree-spoke-config
-      - name: storage
+      - name: config
         emptyDir: {}
       - name: secrets
         secret:
